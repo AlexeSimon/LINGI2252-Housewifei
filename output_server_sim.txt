@@ -1,0 +1,97 @@
+"C:\Program Files\Java\jdk-10.0.1\bin\java.exe" "-javaagent:C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2018.1.3\lib\idea_rt.jar=52546:C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2018.1.3\bin" -Dfile.encoding=UTF-8 -classpath "C:\Users\Zaccharia\Desktop\Creations\Programmation\Java\IntelIJ Workspace\Housewifei\out\production\Housewifei" MainClass
+MAIN : Simulation will run for 15 seconds. First 3 seconds are for start-up time, with remote control deactivated. Next 7 seconds are fully simulated with remote control activated. Final 5 seconds are fully simulated with remote control deactivated. Simulation starts at night, human out of home and remote control set to OFF. Lights are to be turned on only if human is home and it is night and remote control is activated.
+MAIN : Now instantiating Server, Controllers and Simulations.
+MAIN : Starting Simulations...
+MAIN : Starting Controllers...
+MAIN : Starting Server...
+Svr : Server started.
+Sim : DayLight Cycle simulation started with cycle time 3s.
+Sim : Human Presence simulation started with cycle time 2s.
+Con : RadioReceiver on pin 2 started.
+Con : ControlledLight on pin 3 started.
+Con : LightSensor on pin 1 started.
+Con : InfraredCamera on pin 0 started.
+Sim : Human is now home.
+Con : InfraredCamera on pin 0 detected environmental state change and notified server.
+Svr : Server awakened by notification.
+Svr : Server decided no change is needed.
+
+MAIN : Remote control manually set to ON.
+Con : RadioReceiver on pin 2 detected environmental state change and notified server.
+Svr : Server awakened by notification.
+Svr : Server decided light has to be turned on.
+
+Sim : It is now day.
+Con : LightSensor on pin 1 detected environmental state change and notified server.
+Svr : Server awakened by notification.
+Svr : Server decided light has to be turned off.
+
+Sim : Human is now out.
+Con : InfraredCamera on pin 0 detected environmental state change and notified server.
+Svr : Server awakened by notification.
+Svr : Server decided no change is needed.
+
+Sim : Human is now home.
+Sim : It is now night.
+Con : InfraredCamera on pin 0 detected environmental state change and notified server.
+Con : LightSensor on pin 1 detected environmental state change and notified server.
+Svr : Server awakened by notification.
+Svr : Server decided light has to be turned on.
+
+Svr : Server awakened by notification.
+Svr : Server decided no change is needed.
+
+Sim : Human is now out.
+Con : InfraredCamera on pin 0 detected environmental state change and notified server.
+Svr : Server awakened by notification.
+Svr : Server decided light has to be turned off.
+
+Sim : It is now day.
+Con : LightSensor on pin 1 detected environmental state change and notified server.
+Svr : Server awakened by notification.
+Svr : Server decided no change is needed.
+
+MAIN : Remote control manually set to OFF.
+Con : RadioReceiver on pin 2 detected environmental state change and notified server.
+Svr : Server awakened by notification.
+Svr : Server decided no change is needed.
+
+Sim : Human is now home.
+Con : InfraredCamera on pin 0 detected environmental state change and notified server.
+Svr : Server awakened by notification.
+Svr : Server decided no change is needed.
+
+Sim : It is now night.
+Sim : Human is now out.
+Con : LightSensor on pin 1 detected environmental state change and notified server.
+Con : InfraredCamera on pin 0 detected environmental state change and notified server.
+Svr : Server awakened by notification.
+Svr : Server decided no change is needed.
+
+Svr : Server awakened by notification.
+Svr : Server decided no change is needed.
+
+Sim : Human is now home.
+Con : InfraredCamera on pin 0 detected environmental state change and notified server.
+Svr : Server awakened by notification.
+Svr : Server decided no change is needed.
+
+MAIN : Gracefully stopping Simulations...
+MAIN : Gracefully stopping controllers...
+MAIN : Gracefully stopping server...
+Sim : It is now day.
+Sim : DayLight Cycle simulation stopped.
+Con : LightSensor on pin 1 detected environmental state change and notified server.
+Svr : Server awakened by notification.
+Svr : Server decided no change is needed.
+
+Svr : Server stopped.
+Con : LightSensor on pin 1 stopped.
+Sim : Human is now out.
+Sim : Human Presence simulation stopped.
+Con : InfraredCamera on pin 0 detected environmental state change and notified server.
+Con : InfraredCamera on pin 0 stopped.
+Con : ControlledLight on pin 3 stopped.
+Con : RadioReceiver on pin 2 stopped.
+
+Process finished with exit code 0
