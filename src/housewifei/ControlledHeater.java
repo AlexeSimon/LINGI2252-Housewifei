@@ -8,6 +8,9 @@ package housewifei;
  */
 
 public class ControlledHeater extends Controller {
-    /** String description of the controller */
-    String description = "Basic prototype of an automated heater with 2 states. State is 0 if it is switched off, and 1 if it is switched on.";
+
+    public ControlledHeater() {
+        super();
+        this.description= Dictionary.getDescription("ControlledHeater");
+    }
 }

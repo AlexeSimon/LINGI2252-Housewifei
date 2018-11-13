@@ -9,7 +9,9 @@ package housewifei;
 
 
 public class LightSensor extends Controller {
-    /** String description of the controller */
-    String description = "Basic prototype of a light sensor with 2 states. State is 0 if it is dark, and 1 if there is light.";
+    public LightSensor() {
+        super();
+        this.description = Dictionary.getDescription("LightSensor");
+    }
 
 }

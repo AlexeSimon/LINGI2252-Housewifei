@@ -8,8 +8,9 @@ package housewifei;
  */
 
 public class RadioReceiver extends Controller{
-    /** String description of the controller */
-    String description = "Basic prototype of a radio receiver with 2 states. State is 0 if the last command was turn off, 1 if the last command was turn on.";
-
+    public RadioReceiver() {
+        super();
+        this.description = Dictionary.getDescription("RadioReceiver");
+    }
 }
 
