@@ -10,6 +10,6 @@ package housewifei;
 public class InfraredCamera extends Controller {
     public InfraredCamera() {
         super();
-        this.description = Dictionary.getDescription("InfraredCamera");
+        super.setDescription(Dictionary.getDescription("InfraredCamera"));
     }
 }
