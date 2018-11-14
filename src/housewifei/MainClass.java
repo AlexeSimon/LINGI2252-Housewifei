@@ -12,7 +12,7 @@ public class MainClass {
          *  3 : housewifei.ControlledLight
          */
 
-        System.out.println("MAIN : Simulation will run for 15 seconds. First 3 seconds are for start-up time, with light remote control deactivated. Next 7 seconds are fully simulated with light emote control activated. Final 5 seconds are fully simulated with light remote control deactivated. Simulation starts at night, human out of home, light remote control set to OFF, and it is cold. Lights are to be turned on only if human is home and it is night and remote control is activated. Heater is to be turned on only if human is home and temperature is normal.");
+        /*System.out.println("MAIN : Simulation will run for 15 seconds. First 3 seconds are for start-up time, with light remote control deactivated. Next 7 seconds are fully simulated with light emote control activated. Final 5 seconds are fully simulated with light remote control deactivated. Simulation starts at night, human out of home, light remote control set to OFF, and it is cold. Lights are to be turned on only if human is home and it is night and remote control is activated. Heater is to be turned on only if human is home and temperature is normal.");
         System.out.println("MAIN : Now instantiating housewifei.Server, Controllers and Simulations.");
         Server myServer = new Server(6);
 
@@ -77,6 +77,14 @@ public class MainClass {
             myServer.stopAllControllers();
             System.out.println("MAIN : Gracefully stopping server...");
             myServer.stopServer();
+        }*/
+
+        /*ConfigReader cf = new ConfigReader("src/housewifei/config.json");
+        System.out.println(cf.getNb_rules());*/
+
+        Server srv = new Server("src/housewifei/config.json");
+        for (Controller c: srv.controllers) {
+            System.out.println(c.getDescription());
         }
 
     }

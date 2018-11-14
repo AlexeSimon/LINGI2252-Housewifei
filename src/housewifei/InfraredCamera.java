@@ -8,7 +8,8 @@ package housewifei;
  */
 
 public class InfraredCamera extends Controller {
-    /** String description of the controller */
-    String description = "Basic prototype of an infrared camera for human detection with 2 states. State is 0 if there is no human, and 1 if there is.";
-
+    public InfraredCamera() {
+        super();
+        this.description = Dictionary.getDescription("InfraredCamera");
+    }
 }

@@ -1,6 +1,12 @@
 {
-  "CONFIG": "done",
-  "HHHH": "jjj",
-  "ROOM" : "bedroom,",
-  "ARM" : "Qualcomm"
+  "nb_controllers": 3,
+  "controllers": {
+      "0": "ControlledLight",
+      "1": "ControlledHeater",
+      "2": "LightSensor"
+  },
+  "nb_rules":0,
+  "rules": {
+
+  }
 }

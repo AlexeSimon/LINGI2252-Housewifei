@@ -31,10 +31,9 @@ public class Server implements Runnable {
 
     /**
      * Future final controller with config files as input. Not yet implemented.
-     * @param config_file_pins
-     * @param config_file_rules
+     * @param parameter_file name of the parameter file
      */
-    public Server(String config_file_pins, String config_file_rules) {
+    public Server(String parameter_file) {
         /* PART 1 : Parsing of fist config file on pins and present controllers */
 
         // NOT DONE IN THIS PROTOTYPE
@@ -46,7 +45,17 @@ public class Server implements Runnable {
         /* PART 3 : Run Server Thread */
 
         // NOT DONE IN THIS PROTOTYPE
+        ConfigReader cfg = new ConfigReader(parameter_file);
 
+        this.eventListener = new ServerNotifier();
+        this.controllers = new ArrayList<>(cfg.getNb_controllers());
+
+        ControllerFactory factory = new ControllerFactory();
+
+        for (int i = 0; i < cfg.getNb_controllers(); i++){
+            Controller c = (Controller) factory.create(cfg.getControllers().getString(Integer.toString(i)));
+            connectController(i,c);
+        }
     }
 
     /**
