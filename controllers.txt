@@ -1,0 +1,7 @@
+InfraredCamera
+LightSensor
+RadioReceiver
+ControlledLight
+TemperatureSensor
+ControlledHeater
+ControlledLight

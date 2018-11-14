@@ -1,7 +1,7 @@
 package housewifei;
 
+import java.io.RandomAccessFile;
 import java.util.ArrayList;
-import org.json.JSONObject;
 
 /**
  * Server Object
@@ -12,41 +12,103 @@ import org.json.JSONObject;
 public class Server implements Runnable {
 
     /** Controllers connected to this server. */
-    ArrayList<Controller> controllers;
+    private Controller[] controllers;
+
+    /** Rules. */
+    private ArrayList<Rule> rules;
 
     /** Server Notifier this server is listening to. */
-    ServerNotifier eventListener;
+    private ServerNotifier eventListener;
 
     /** Set to true if the controller thread is running. Set to false when the controller must be gracefully stopped. */
-    boolean running = false;
+    private boolean running = false;
+
+    /* To hold self thread. */
+    private Thread thread;
+
+    private boolean silent = false;
 
     /**
      * Default constructor with number of pin. Automatically instantiate a {@link ServerNotifier}. Use with {@link #connectController(int, Controller)}
      * @param number_of_pins The number of pin this server has.
      */
     public Server(int number_of_pins) {
-        this.controllers = new ArrayList<Controller>(number_of_pins);
+        this.controllers = new Controller[number_of_pins];
         this.eventListener = new ServerNotifier();
     }
 
     /**
      * Future final controller with config files as input. Not yet implemented.
-     * @param config_file_pins
-     * @param config_file_rules
+     * @param config_file_controllers name of the config file holding the controllers
+     * @param config_file_rules name of the config file holding the rules
      */
-    public Server(String config_file_pins, String config_file_rules) {
+    public Server(String config_file_controllers, String config_file_rules) {
         /* PART 1 : Parsing of fist config file on pins and present controllers */
-
-        // NOT DONE IN THIS PROTOTYPE
+        try {
+            RandomAccessFile raf = new RandomAccessFile(config_file_controllers, "r");
+            String line;
+            int count = 0;
+            this.eventListener = new ServerNotifier();
+            while ((line = raf.readLine()) != null)
+                count++;
+            this.controllers = new Controller[count];
+            raf.seek(0);
+            count = 0;
+            while ((line = raf.readLine()) != null) {
+                Controller newController = (Controller) Class.forName("housewifei."+line).getConstructor().newInstance();
+                newController.setDescription(line+" on pin "+count);
+                newController.setEnvironment(new EnvironmentSimulation());
+                connectController(count, (Controller) newController);
+                count++;
+            }
+        } catch (Exception e) {
+            print("Error while reading file "+config_file_controllers+". "+e+".");
+            System.exit(1);
+        }
 
         /* PART 2 : Parsing of second config file on rules consisting of conditions and events */
 
-        // NOT DONE IN THIS PROTOTYPE
+        try {
+            RandomAccessFile raf = new RandomAccessFile(config_file_rules, "r");
+            String line;
+            rules = new ArrayList<Rule>(5);
+            int count = 0;
+            while ((line = raf.readLine()) != null) {
+                line = line.split("#")[0];
+                line = line.replaceAll("\\s", "");
+                if (line.length() > 0) {
+                    String[] parts = line.split("@");
+                    if (parts.length != 2)
+                        throw new Exception("Syntax error not using @ correctly");
+                    rules.add(new Rule(parts[0], parts[1]));
+                    count++;
+                }
+            }
+
+
+
+        } catch (Exception e) {
+            print("Error while reading file "+config_file_rules+". "+e+".");
+            System.exit(1);
+        }
 
         /* PART 3 : Run Server Thread */
 
         // NOT DONE IN THIS PROTOTYPE
 
+    }
+
+    public boolean isSilent() {
+        return silent;
+    }
+
+    public void setSilent(boolean value) {
+        silent = value;
+    }
+
+    public void print(String message) {
+        if(!silent)
+            System.out.println(message);
     }
 
     /**
@@ -55,9 +117,41 @@ public class Server implements Runnable {
      * @param controller The controller to be connected.
      */
     public void connectController(int pin, Controller controller) {
-        controllers.add(pin, controller);
-        controller.setServer(eventListener);
-        controller.setPin(pin);
+        if(!isPinUsed(pin)) {
+            controllers[pin] = controller;
+            controller.setServer(eventListener);
+            controller.setPin(pin);
+        }
+        else
+            print("Error : "+pin+" already in use.");
+
+    }
+
+    public void disconnectController(int pin) {
+        if(isPinUsed(pin)) {
+            controllers[pin].setServer(null);
+            controllers[pin].setPin(-1);
+            controllers[pin] = null;
+        }
+        else
+            print("Error : No controller connected on pin "+pin+".");
+    }
+
+    public Controller getController(int pin) {
+        if(isPinUsed(pin))
+            return controllers[pin];
+        else {
+            print("Error : No controller connected on pin "+pin+".");
+            return null;
+        }
+    }
+
+    public Controller[] getControllers() {
+        return controllers;
+    }
+
+    public boolean isPinUsed(int pin) {
+        return controllers[pin] != null;
     }
 
     /**
@@ -65,7 +159,10 @@ public class Server implements Runnable {
      * @param pin The pin the controller is connected to.
      */
     public void startController(int pin) {
-        controllers.get(pin).startController();
+        if(isPinUsed(pin))
+            controllers[pin].startController();
+        else
+            print("Error : No controller connected on pin "+pin+".");
     }
 
     /**
@@ -73,23 +170,95 @@ public class Server implements Runnable {
      * @param pin The pin the controller is connected to.
      */
     public void stopController(int pin) {
-        controllers.get(pin).stopController();
+        if(isPinUsed(pin))
+            controllers[pin].stopController();
+        else
+            print("Error : No controller connected on pin "+pin+".");
     }
 
     /**
      * Starts all controllers connected to this server.
      */
     public void startAllControllers() {
-        for (Controller controller : controllers)
-            controller.startController();
+        for (int i = 0 ; i < controllers.length ; i++) {
+            if (controllers[i] != null)
+                controllers[i].startController();
+        }
     }
 
     /**
      * Gracefully stops all controllers connected to this server.
      */
     public void stopAllControllers() {
-        for (Controller controller : controllers)
-            controller.stopController();
+        for (int i = 0 ; i < controllers.length ; i++) {
+            if (controllers[i] != null)
+                controllers[i].stopController();
+        }
+
+    }
+
+    public EnvironmentSimulation getControllerEnvironment(int pin) {
+        if(isPinUsed(pin))
+            return controllers[pin].getEnvironment();
+        else {
+            print("Error : No controller connected on pin "+pin+".");
+            return null;
+        }
+    }
+
+    public void setControllerEnvironment(int pin, EnvironmentSimulation environment) {
+        if(isPinUsed(pin))
+            controllers[pin].setEnvironment(environment);
+        else
+            print("Error : No controller connected on pin "+pin+".");
+    }
+
+    public void startControllerEnvironment(int pin) {
+        if(isPinUsed(pin))
+            controllers[pin].startEnvironmentSimulation();
+        else
+            print("Error : No controller connected on pin "+pin+".");
+    }
+    public void startControllerEnvironment(int pin, long cycleTime) {
+        if(isPinUsed(pin))
+            controllers[pin].startEnvironmentSimulation(cycleTime);
+        else
+            print("Error : No controller connected on pin "+pin+".");
+    }
+
+    public void startAllEnvironments() {
+        for (int i = 0 ; i < controllers.length ; i++) {
+            if (controllers[i] != null)
+                controllers[i].startEnvironmentSimulation();
+        }
+    }
+
+    public void stopAllEnvironments() {
+        for (int i = 0 ; i < controllers.length ; i++) {
+            if (controllers[i] != null)
+                controllers[i].stopEnvironmentSimulation();
+        }
+    }
+
+    public void stopControllerEnvironment(int pin) {
+        if(isPinUsed(pin))
+            controllers[pin].stopEnvironmentSimulation();
+        else
+            print("Error : No controller connected on pin "+pin+".");
+    }
+
+    public void setControllerEnvironmentState(int pin, int state) {
+        if(isPinUsed(pin))
+            controllers[pin].setEnvironmentState(state);
+        else
+            print("Error : No controller connected on pin "+pin+".");
+    }
+
+    public void setControllerState(int pin, int state) {
+        if(isPinUsed(pin))
+            controllers[pin].changeState(state);
+        else
+            print("Error : No controller connected on pin "+pin+".");
     }
 
     /**
@@ -108,46 +277,22 @@ public class Server implements Runnable {
         this.eventListener = eventListener;
     }
 
-    /**
-     * Some hard coded rules for demonstration of the correct server-controllers thread implementation.
-     */
-    public void checkHardCodedRules() {
-        /* for the hard coded prototype only, the pins must be as follow:
-         *  0 : InfraredCamera - 0 for no human present, 1 for human present
-         *  1 : LightSensor - 0 for dark, 1 for light
-         *  2 : RadioReceiver - 0 for off, 1 for on
-         *  3 : ControlledLight - 0 for off, 1 for on
-         *  4 : ColdSensor - 0 for normal, 1 for cold
-         *  5 : ControlledHeater - 0 for off, 1 for on
-         */
-
-        boolean flag = true;
-
-        // if human is home and it is dark and manual remote is on ON position and light is off, turn on light
-        if(controllers.get(0).updateIsState(1) && controllers.get(1).updateIsState(0) && controllers.get(2).updateIsState(1) && controllers.get(3).updateIsState(0)) {
-            System.out.println("Svr : Server decided light has to be turned on.");
-            controllers.get(3).changeState(1);
-            flag = false;
-        } // if human isn't home or it is day or manual remote is on OFF position and light is on, turn off light
-        else if((controllers.get(0).updateIsState(0) || controllers.get(1).updateIsState(1) || controllers.get(2).updateIsState(0)) && controllers.get(3).updateIsState(1)) {
-            System.out.println("Svr : Server decided light has to be turned off.");
-            controllers.get(3).changeState(0);
-            flag = false;
-        } // else there is nothing to do
-        if(controllers.get(4).updateIsState(1) && controllers.get(0).updateIsState(1) && controllers.get(5).updateIsState(0)) {
-            System.out.println("Svr : Server decided heater has to be turned on.");
-            controllers.get(5).changeState(1);
-            flag = false;
+    public boolean isControllerInState(int pin, int state) {
+        if(isPinUsed(pin))
+            return controllers[pin].updateIsState(state);
+        else {
+            print("Error : No controller connected on pin "+pin+".");
+            return false;
         }
-        else if((controllers.get(4).updateIsState(0) || controllers.get(0).updateIsState(0)) && controllers.get(5).updateIsState(1)){
-            System.out.println("Svr : Server decided heater has to be turned off.");
-            controllers.get(5).changeState(0);
-            flag = false;
-        }
-        if(flag)
-            System.out.println("Svr : Server decided no change is needed.");
-        System.out.println();
     }
+
+    public void checkRules() {
+        for (Rule rule : rules) {
+            if (rule.evaluateExpression())
+                rule.executeConsequence();
+        }
+    }
+
 
     /**
      * Starts the server.
@@ -155,34 +300,171 @@ public class Server implements Runnable {
     public void startServer() {
         if (!running) {
             running = true;
-            new Thread(this).start();
+            thread = new Thread(this);
+            thread.start();
         }
     }
 
     /**
-     * Gracefully stops the server.
+     * Stops the server.
      */
     public void stopServer() {
         running = false;
+        thread.interrupt();
     }
 
     /**
-     * Generic thread function for a server. Uses {@link #checkHardCodedRules()} for demonstration.
+     * Generic thread function for a server.
      */
     public void run() {
-        System.out.print("Svr : Server started.\n");
+        print("Svr : Server started.\n");
         while(running) {
             synchronized (eventListener) {
                 try {
-                    eventListener.wait(5000);
-                    System.out.print("Svr : Server awakened by notification.\n");
-                    checkHardCodedRules();
+                    eventListener.wait();
+                    print("Svr : Server awakened by notification.\n");
+                    checkRules();
 
                 } catch (InterruptedException e) {
-                    System.out.print("Svr : Server interrupted.\n");
+                    print("Svr : Server interrupted.\n");
                 }
             }
         }
-        System.out.print("Svr : Server stopped.\n");
+        print("Svr : Server stopped.\n");
     }
+
+    private class Rule {
+
+        private String expression;
+        private String consequence;
+
+
+        public Rule(String expression, String consequence) {
+            this.expression = expression;
+            this.consequence = consequence;
+        }
+
+        public String getExpression() {
+            return expression;
+        }
+
+        public void setExpression(String expression) {
+            this.expression = expression;
+        }
+
+        public String getConsequence() {
+            return consequence;
+        }
+
+        public void setConsequence(String consequence) {
+            this.consequence = consequence;
+        }
+
+        public boolean evaluateExpression() {
+            // Code greatly inspired from https://stackoverflow.com/questions/3422673/evaluating-a-math-expression-given-in-string-form, eleased by author to Public Domain, last visited 14 November 2018
+            return new Object() {
+                int pos = -1, ch;
+
+                void nextChar() {
+                    ch = (++pos < expression.length()) ? expression.charAt(pos) : -1;
+                }
+
+                boolean eat(int charToEat) {
+                    while (ch == ' ')
+                        nextChar();
+                    if (ch == charToEat) {
+                        nextChar();
+                        return true;
+                    }
+                    return false;
+                }
+
+                boolean parse() {
+                    nextChar();
+                    boolean x = parseExpression();
+                    if (pos < expression.length())
+                        throw new RuntimeException("Unexpected 1: " + (char)ch);
+                    return x;
+                }
+
+                // Grammar:
+                // expression = term | expression `^` term | expression `|` term
+                // term = factor | term '&' factor
+                // factor = '!' factor | `(` expression `)` | number '_' number
+                // () > NOT > AND > XOR = OR
+
+                boolean parseExpression() {
+                    boolean x = parseTerm();
+                    while(true) {
+                        if(eat('^')) {
+                            x = (parseTerm() ^ x); // xor
+                        }
+                        else if (eat('|')) {
+                            x = (parseTerm() || x); // or
+                        }
+                        else {
+                            return x;
+                        }
+                    }
+                }
+
+                boolean parseTerm() {
+                    boolean x = parseFactor();
+                    while (true) {
+                        if(eat('&')) { ;
+                            x = (parseFactor() && x); // and
+                        }
+                        else {
+                            return x;
+                        }
+                    }
+                }
+
+                boolean parseFactor() {
+                    if (eat('!'))
+                        return !parseFactor(); // logical not
+
+                    boolean x;
+                    int tempPin;
+                    int tempState;
+                    int delta;
+                    int startPos = this.pos;
+
+                    if (eat('(')) { // parentheses
+                        x = parseExpression();
+                        eat(')');
+                    }
+                    else if (ch >= '0' && ch <= '9') { // numbers
+                        while (ch >= '0' && ch <= '9') nextChar();
+                        tempPin = Integer.parseInt(expression.substring(startPos, this.pos));
+                        if(!eat('_'))
+                            throw new RuntimeException("Unexpected 2: " + (char)ch);
+                        delta = this.pos;
+                        while (ch >= '0' && ch <= '9') nextChar();
+                        tempState = Integer.parseInt(expression.substring(delta, this.pos));
+                        x = isControllerInState(tempPin, tempState);
+                    }
+                    else {
+                        throw new RuntimeException("Unexpected 3: " + (char)ch);
+                    }
+                    return x;
+                }
+            }.parse();
+        }
+
+        public void executeConsequence() {
+            int tempPin;
+            int tempState;
+            String[] parts = consequence.split("&");
+            for (String part : parts) {
+                String[] subs = part.split("_");
+                tempPin = Integer.parseInt(subs[0]);
+                tempState = Integer.parseInt(subs[1]);
+                print("Svr : setting "+controllers[tempPin].getDescription()+" to state " +tempState+".");
+                setControllerState(tempPin, tempState);
+            }
+        }
+
+    }
+
 }

@@ -1,5 +1,8 @@
 package housewifei;
 
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * housewifei.Controller Object
  *
@@ -8,31 +11,37 @@ package housewifei;
  * @author Alexe Simon and Mawait Maxime
  */
 
-public class Controller implements Runnable {
+public class Controller implements Runnable  {
     /** Internally saved state of the controller ; depends on each controller. */
-    int state;
+    private int state;
 
     /** Server pin on which the controller is connected ; mostly used for identification. */
-    int pin;
+    private int pin;
+
+    /** Objects holding self thread for interruption purposes. */
+    private Thread thread;
 
     /** Object representing the connection to the server. Allows to notify the server of any detected change. */
-    ServerNotifier server;
+    private ServerNotifier server;
 
     /** Simulation of the real state of the environment ; depends on each controller ; only for the pure software prototype version. */
-    EnvironmentSimulation environment;
+    private EnvironmentSimulation environment;
 
     /** String description of the controller. */
-    String description = "This controller has no description.";
+    private String description = "This controller has no description.";
 
     /** Set to true if the controller thread is running. Set to false when the controller must be gracefully stopped. */
-    boolean running = false;
+    private boolean running = false;
+
+    /** Set to true and the controller won't print any messages. */
+    private boolean silent = false;
 
     /**
-     * Default Constructor. Sets state and pin to 0. A valid server and environment must then be added for this controller to be run in a thread.
+     * Default Constructor. Sets state  at 0 and pin at -1. A valid server and environment must then be added for this controller to be run in a thread.
      */
     public Controller() {
         this.state = 0;
-        this.pin = 0;
+        this.pin = -1;
     }
 
     /**
@@ -115,6 +124,35 @@ public class Controller implements Runnable {
         this.environment = environment;
     }
 
+    public int getEnvironmentState() {
+        return environment.getState();
+    }
+
+    public void setEnvironmentState(int state) {
+        environment.setState(state);
+    }
+
+    public long getEnvironmentCycleTime() {
+        return this.environment.getCycleTime();
+    }
+
+    public void setEnvironmentCycleTime(long cycleTime) {
+        this.environment.setCycleTime(cycleTime);
+    }
+
+    public void startEnvironmentSimulation(long cycle) {
+        this.environment.setCycleTime(cycle);
+        this.environment.startSimulation();
+    }
+
+    public void startEnvironmentSimulation() {
+        this.environment.startSimulation();
+    }
+
+    public void stopEnvironmentSimulation() {
+        this.environment.stopSimulation();
+    }
+
     /**
      * Description getter.
      * @return The String description of this controller.
@@ -129,6 +167,19 @@ public class Controller implements Runnable {
      */
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public boolean isSilent() {
+        return silent;
+    }
+
+    public void setSilent(boolean value) {
+        silent = value;
+    }
+
+    public void print(String message) {
+        if(!silent)
+            System.out.println(message);
     }
 
     /**
@@ -195,15 +246,17 @@ public class Controller implements Runnable {
     public void startController() {
         if (!running) {
             running = true;
-            new Thread(this).start();
+            thread = new Thread(this);
+            thread.start();
         }
     }
 
     /**
-     * Stops gracefully the controller thread.
+     * Stops the controller thread.
      */
     public void stopController() {
         running = false;
+        thread.interrupt();
     }
 
     /**
@@ -211,24 +264,30 @@ public class Controller implements Runnable {
      */
     @Override
     public void run() {
-        System.out.print("Con : " + this.getClass().getSimpleName()+" on pin "+pin+" started.\n");
-        while(running) {
-            synchronized (environment) {
-                try {
-                    environment.wait(5000); // time out of 5 seconds in case simulations turns off.
+        if (environment != null) {
+            print("Con : " + this.getClass().getSimpleName()+" on pin "+pin+" started.");
+            while(running) {
+                synchronized (environment) {
+                    try {
+                        environment.wait();
 
-                    if (updateState()) {
-                        System.out.print("Con : " + this.getClass().getSimpleName()+" on pin "+pin+" detected environmental state change and notified server.\n");
-                        synchronized (server) {
-                            server.notify();
+                        if (updateState()) {
+                            print("Con : " + this.getClass().getSimpleName()+" on pin "+pin+" detected environmental state change and notified server.");
+                            synchronized (server) {
+                                server.setMsg(pin, state);
+                                server.notify();
+                            }
                         }
-                    }
 
-                } catch (InterruptedException e) {
-                    System.out.print("Con : " + this.getClass().getSimpleName()+" on pin "+pin+" interrupted.\n");
+                    } catch (InterruptedException e) {
+                        print("Con : " + this.getClass().getSimpleName()+" on pin "+pin+" interrupted.");
+                    }
                 }
             }
+            print("Con : " + this.getClass().getSimpleName()+" on pin "+pin+" stopped.");
         }
-        System.out.print("Con : " + this.getClass().getSimpleName()+" on pin "+pin+" stopped.\n");
+        else {
+            print("Con : Can't start "+ this.getClass().getSimpleName()+" on pin "+pin+" because it has no environment simulation connected.");
+        }
     }
 }

@@ -10,7 +10,35 @@ package housewifei;
 
 public class ServerNotifier {
 
+    //The notified pin
+    private int pin;
+
+    //The state received
+    private int state;
+
     public ServerNotifier() {
-        // Nothing needed yet.
+        pin = -1;
+        state = -1;
+    }
+
+    public int getPin() {
+        return pin;
+    }
+
+    public int getState() {
+        return state;
+    }
+
+    public void setPin(int pin) {
+        this.pin = pin;
+    }
+
+    public void setState(int state) {
+        this.state = state;
+    }
+
+    public void setMsg(int pin, int state) {
+        setPin(pin);
+        setState(state);
     }
 }
