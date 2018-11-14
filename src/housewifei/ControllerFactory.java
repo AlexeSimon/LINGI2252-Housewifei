@@ -3,28 +3,12 @@ package housewifei;
 public class ControllerFactory implements Factory{
 
     public Object create(String pattern){
-        Object res;
-        switch (pattern) {
-            case "ControlledLight":
-                res = new ControlledLight();
-                break;
-            case "ControlledHeater":
-                res = new ControlledHeater();
-                break;
-            case "InfraredCamera":
-                res = new InfraredCamera();
-                break;
-            case "LightSensor":
-                res = new LightSensor();
-                break;
-            case "RadioReceiver":
-                res = new RadioReceiver();
-                break;
-            default:
-                res = new Controller();
-                break;
+        try{
+            return Class.forName("housewifei."+pattern).getConstructor().newInstance();
+        } catch (Exception e) {
+            System.err.println(e.getMessage());
+            return null;
         }
-        return res;
     }
 
 }
