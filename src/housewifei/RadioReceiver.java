@@ -10,7 +10,7 @@ package housewifei;
 public class RadioReceiver extends Controller{
     public RadioReceiver() {
         super();
-        this.description = Dictionary.getDescription("RadioReceiver");
+        super.setDescription(Dictionary.getDescription("RadioReceiver"));
     }
 }
 

@@ -11,6 +11,6 @@ public class ControlledHeater extends Controller {
 
     public ControlledHeater() {
         super();
-        this.description= Dictionary.getDescription("ControlledHeater");
+        super.setDescription(Dictionary.getDescription("ControlledHeater"));
     }
 }

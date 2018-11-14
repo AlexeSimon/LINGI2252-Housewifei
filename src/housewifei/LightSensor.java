@@ -11,7 +11,7 @@ package housewifei;
 public class LightSensor extends Controller {
     public LightSensor() {
         super();
-        this.description = Dictionary.getDescription("LightSensor");
+        super.setDescription(Dictionary.getDescription("LightSensor"));
     }
 
 }

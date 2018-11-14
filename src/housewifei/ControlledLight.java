@@ -11,6 +11,6 @@ public class ControlledLight extends Controller {
 
     public ControlledLight(){
         super();
-        this.description = Dictionary.getDescription("ControlledLight");
+        super.setDescription(Dictionary.getDescription("ControlledLight"));
     }
 }
