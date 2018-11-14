@@ -8,8 +8,8 @@ package housewifei;
  */
 
 
-public class ColdSensor extends Controller {
+public class TemperatureSensor extends Controller {
     /** String description of the controller */
-    String description = "Basic prototype of a temperature sensor with 2 states. State is 1 if it is cold, and 0 else.";
+    String description = "Basic prototype of a temperature sensor with 2 states. State is 1 if it is warm, and 0 if cold.";
 
 }

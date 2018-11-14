@@ -1,0 +1,13 @@
+# () = PARENTHESIS, ! = NOT, & = AND, ^ = XOR, | = OR, @ = THEN
+
+# 0 : InfraredCamera - 0 for no human present, 1 for human present
+# 1 : LightSensor - 0 for dark, 1 for light
+# 2 : RadioReceiver - 0 for off, 1 for on
+# 3 : ControlledLight - 0 for off, 1 for on
+# 4 : TemperatureSensor - 1 for warm, 0 for cold
+# 5 : ControlledHeater - 0 for off, 1 for on
+
+0_1 & 1_0 & 2_1 & 3_0 & 6_0 @ 3_1 & 6_1 # if human is home and it is dark and manual remote is on ON position and light is off, turn on light 3 and light 6
+(0_0 | 1_1 | 2_0) & 3_1 & 6_1 @ 3_0 & 6_0 # if human isn't home or it is day or manual remote is on OFF position and light is on, turn off light 3 and light 6
+4_0 & 0_1 & 5_0 @ 5_1 # if it is cold and human is home and heater is off, turn on heater
+(4_1 | 0_0) & 5_1 @ 5_0 # if it isn't cold or human is out and heater is on, turn heater off.
