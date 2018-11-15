@@ -10,6 +10,7 @@ public class MainClass {
 
         myServer.startAllControllers();
         myServer.startServer();
+
         myServer.getControllerEnvironment(0).setName("HumanPresence");
         myServer.startControllerEnvironment(0,2);
         myServer.getControllerEnvironment(1).setName("Light");
@@ -18,6 +19,7 @@ public class MainClass {
         myServer.setControllerEnvironmentState(2,1);
         myServer.getControllerEnvironment(4).setName("Temperature");
         myServer.startControllerEnvironment(4,4);
+
 
         try {
             TimeUnit.SECONDS.sleep(15);
@@ -30,6 +32,7 @@ public class MainClass {
         myServer.stopAllControllers();
         myServer.stopAllEnvironments();
         myServer.stopServer();
+
     }
 
 }

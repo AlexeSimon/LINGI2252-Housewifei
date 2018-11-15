@@ -1,6 +1,8 @@
 package housewifei;
 
-import java.io.RandomAccessFile;
+import util.CompanyFileReader;
+import util.CompanyFileReaderBuilder;
+
 import java.util.ArrayList;
 
 /**
@@ -26,6 +28,8 @@ public class Server implements Runnable {
     /* To hold self thread. */
     private Thread thread;
 
+
+    /* Set to to true to silence server's prints */
     private boolean silent = false;
 
     /**
@@ -43,18 +47,25 @@ public class Server implements Runnable {
      * @param config_file_rules name of the config file holding the rules
      */
     public Server(String config_file_controllers, String config_file_rules) {
+        /* PART 0 : INIT */
+        this.eventListener = new ServerNotifier();
+
         /* PART 1 : Parsing of fist config file on pins and present controllers */
         try {
-            RandomAccessFile raf = new RandomAccessFile(config_file_controllers, "r");
+            CompanyFileReaderBuilder fileReaderBuilder = new CompanyFileReaderBuilder(config_file_controllers);
+            CompanyFileReader raf = fileReaderBuilder
+                    .setIgnoreEmptyLines(true)
+                    .setRemoveSpaces(true)
+                    .setRemoveComments(true)
+                    .setCommentSymbol("#")
+                    .build();
+
+            this.controllers = new Controller[raf.countUsefulLines()];
+
             String line;
             int count = 0;
-            this.eventListener = new ServerNotifier();
-            while ((line = raf.readLine()) != null)
-                count++;
-            this.controllers = new Controller[count];
-            raf.seek(0);
-            count = 0;
-            while ((line = raf.readLine()) != null) {
+
+            while ((line = raf.smartReadLine()) != null) {
                 Controller newController = (Controller) Class.forName("housewifei."+line).getConstructor().newInstance();
                 newController.setDescription(line+" on pin "+count);
                 newController.setEnvironment(new EnvironmentSimulation());
@@ -69,23 +80,24 @@ public class Server implements Runnable {
         /* PART 2 : Parsing of second config file on rules consisting of conditions and events */
 
         try {
-            RandomAccessFile raf = new RandomAccessFile(config_file_rules, "r");
+            CompanyFileReaderBuilder fileReaderBuilder = new CompanyFileReaderBuilder(config_file_rules);
+            CompanyFileReader raf = fileReaderBuilder
+                    .setIgnoreEmptyLines(true)
+                    .setRemoveSpaces(true)
+                    .setRemoveComments(true)
+                    .setCommentSymbol("#")
+                    .build();
+
+            rules = new ArrayList<Rule>(raf.countUsefulLines());
+
             String line;
-            rules = new ArrayList<Rule>(5);
-            int count = 0;
-            while ((line = raf.readLine()) != null) {
-                line = line.split("#")[0];
-                line = line.replaceAll("\\s", "");
-                if (line.length() > 0) {
+
+            while ((line = raf.smartReadLine()) != null) {
                     String[] parts = line.split("@");
                     if (parts.length != 2)
-                        throw new Exception("Syntax error not using @ correctly");
+                        throw new RuntimeException("Syntax error not using @ correctly.");
                     rules.add(new Rule(parts[0], parts[1]));
-                    count++;
                 }
-            }
-
-
 
         } catch (Exception e) {
             print("Error while reading file "+config_file_rules+". "+e+".");
@@ -298,8 +310,8 @@ public class Server implements Runnable {
 
     public void checkRules() {
         for (Rule rule : rules) {
-            if (rule.evaluateExpression())
-                rule.executeConsequence();
+            if (rule.evaluateExpression(this))
+                rule.executeConsequence(this);
         }
     }
 
@@ -341,140 +353,6 @@ public class Server implements Runnable {
             }
         }
         print("Svr : Server stopped.\n");
-    }
-
-    private class Rule {
-
-        private String expression;
-        private String consequence;
-
-
-        public Rule(String expression, String consequence) {
-            this.expression = expression;
-            this.consequence = consequence;
-        }
-
-        public String getExpression() {
-            return expression;
-        }
-
-        public void setExpression(String expression) {
-            this.expression = expression;
-        }
-
-        public String getConsequence() {
-            return consequence;
-        }
-
-        public void setConsequence(String consequence) {
-            this.consequence = consequence;
-        }
-
-        public boolean evaluateExpression() {
-            // Code greatly inspired from https://stackoverflow.com/questions/3422673/evaluating-a-math-expression-given-in-string-form, eleased by author to Public Domain, last visited 14 November 2018
-            return new Object() {
-                int pos = -1, ch;
-
-                void nextChar() {
-                    ch = (++pos < expression.length()) ? expression.charAt(pos) : -1;
-                }
-
-                boolean eat(int charToEat) {
-                    while (ch == ' ')
-                        nextChar();
-                    if (ch == charToEat) {
-                        nextChar();
-                        return true;
-                    }
-                    return false;
-                }
-
-                boolean parse() {
-                    nextChar();
-                    boolean x = parseExpression();
-                    if (pos < expression.length())
-                        throw new RuntimeException("Unexpected 1: " + (char)ch);
-                    return x;
-                }
-
-                // Grammar:
-                // expression = term | expression `^` term | expression `|` term
-                // term = factor | term '&' factor
-                // factor = '!' factor | `(` expression `)` | number '_' number
-                // () > NOT > AND > XOR = OR
-
-                boolean parseExpression() {
-                    boolean x = parseTerm();
-                    while(true) {
-                        if(eat('^')) {
-                            x = (parseTerm() ^ x); // xor
-                        }
-                        else if (eat('|')) {
-                            x = (parseTerm() || x); // or
-                        }
-                        else {
-                            return x;
-                        }
-                    }
-                }
-
-                boolean parseTerm() {
-                    boolean x = parseFactor();
-                    while (true) {
-                        if(eat('&')) { ;
-                            x = (parseFactor() && x); // and
-                        }
-                        else {
-                            return x;
-                        }
-                    }
-                }
-
-                boolean parseFactor() {
-                    if (eat('!'))
-                        return !parseFactor(); // logical not
-
-                    boolean x;
-                    int tempPin;
-                    int tempState;
-                    int delta;
-                    int startPos = this.pos;
-
-                    if (eat('(')) { // parentheses
-                        x = parseExpression();
-                        eat(')');
-                    }
-                    else if (ch >= '0' && ch <= '9') { // numbers
-                        while (ch >= '0' && ch <= '9') nextChar();
-                        tempPin = Integer.parseInt(expression.substring(startPos, this.pos));
-                        if(!eat('_'))
-                            throw new RuntimeException("Unexpected 2: " + (char)ch);
-                        delta = this.pos;
-                        while (ch >= '0' && ch <= '9') nextChar();
-                        tempState = Integer.parseInt(expression.substring(delta, this.pos));
-                        x = isControllerInState(tempPin, tempState);
-                    }
-                    else {
-                        throw new RuntimeException("Unexpected 3: " + (char)ch);
-                    }
-                    return x;
-                }
-            }.parse();
-        }
-
-        public void executeConsequence() {
-            int tempPin;
-            int tempState;
-            String[] parts = consequence.split("&");
-            for (String part : parts) {
-                String[] subs = part.split("_");
-                tempPin = Integer.parseInt(subs[0]);
-                tempState = Integer.parseInt(subs[1]);
-                print("Svr : setting "+controllers[tempPin].getDescription()+" to state " +tempState+".");
-                setControllerState(tempPin, tempState);
-            }
-        }
-
     }
 
 }
