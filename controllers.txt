@@ -1,10 +1,10 @@
 # You can add comments using #
 # Empty lines are ignored
 
-InfraredCamera # Example comment ; This camera checks for human presence
-LightSensor
-RadioReceiver
+InfraredCamera # Will be automatically connected on pin 0
+LightSensor # Will be automatically connected on pin 1
+RadioReceiver # ...
 ControlledLight
 TemperatureSensor
-ControlledHeater
+ControlledHeater # Example comment
 ControlledLight
