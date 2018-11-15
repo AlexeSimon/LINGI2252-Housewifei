@@ -16,4 +16,14 @@ public class HousewifeiParser extends CompanyParser {
         return ans;
     }
 
+
+    private class BooleanExpressionEvaluator {
+        int pos = -1;
+        int ch;
+        Server server;
+        String expression;
+
+
+    }
+
 }
