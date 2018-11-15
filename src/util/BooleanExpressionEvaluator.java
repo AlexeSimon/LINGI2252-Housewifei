@@ -1,5 +1,7 @@
 package util;
 
+import java.text.ParseException;
+
 // Code greatly inspired from https://stackoverflow.com/questions/3422673/evaluating-a-math-expression-given-in-string-form, released by author to Public Domain, last visited 14 November 2018
 public class BooleanExpressionEvaluator {
         protected int pos, ch;
@@ -23,12 +25,12 @@ public class BooleanExpressionEvaluator {
             return false;
         }
 
-        public boolean parse() {
+        public boolean parse() throws ParseException {
             pos = -1;
             nextChar();
             boolean x = parseExpression();
             if (pos < expression.length())
-                throw new RuntimeException("Unexpected : " + (char)ch);
+                handleError();
             return x;
         }
 
@@ -38,7 +40,7 @@ public class BooleanExpressionEvaluator {
         // factor = '!' factor | `(` expression `)` | number '_' number
         // () > NOT > AND > XOR = OR
 
-        protected boolean parseExpression() {
+        protected boolean parseExpression() throws ParseException {
             boolean x = parseTerm();
             while(true) {
                 if(eat('^')) {
@@ -53,7 +55,7 @@ public class BooleanExpressionEvaluator {
             }
         }
 
-        protected boolean parseTerm() {
+        protected boolean parseTerm() throws ParseException {
             boolean x = parseFactor();
             while (true) {
                 if(eat('&')) { ;
@@ -65,11 +67,11 @@ public class BooleanExpressionEvaluator {
             }
         }
 
-        protected boolean parseFactor() {
+        protected boolean parseFactor() throws ParseException {
             if (eat('!'))
                 return !parseFactor(); // logical not
 
-            boolean x;
+            boolean x = false;
             int startPos = this.pos;
 
             if (eat('(')) { // parentheses
@@ -80,17 +82,22 @@ public class BooleanExpressionEvaluator {
                 x = parseNumber(startPos);
             }
             else {
-                throw new RuntimeException("Unexpected : " + (char)ch);
+                handleError();
             }
             return x;
         }
 
-        protected boolean parseNumber(int startPos) {
+        protected boolean parseNumber(int startPos) throws ParseException {
 
             while (ch >= '0' && ch <= '9')
                 nextChar();
             int number = Integer.parseInt(expression.substring(startPos, this.pos));
             return (number != 0);
+
+        }
+
+        protected void handleError() throws ParseException {
+            throw new ParseException("Unexpected : " + expression.charAt(pos-1) + " at position " + (pos-1), (pos-1));
 
         }
 }

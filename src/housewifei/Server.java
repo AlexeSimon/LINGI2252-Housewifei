@@ -3,6 +3,7 @@ package housewifei;
 import util.CompanyFileReader;
 import util.CompanyFileReaderBuilder;
 
+import java.text.ParseException;
 import java.util.ArrayList;
 
 /**
@@ -27,7 +28,6 @@ public class Server implements Runnable {
 
     /* To hold self thread. */
     private Thread thread;
-
 
     /* Set to to true to silence server's prints */
     private boolean silent = false;
@@ -139,7 +139,7 @@ public class Server implements Runnable {
      * @param controller The controller to be connected.
      */
     public void connectController(int pin, Controller controller) {
-        if(!isPinUsed(pin)) {
+        if(pinIsValid(pin) && !isPinUsed(pin)) {
             controllers[pin] = controller;
             controller.setServer(eventListener);
             controller.setPin(pin);
@@ -150,9 +150,9 @@ public class Server implements Runnable {
     }
 
     public void disconnectController(int pin) {
-        if(isPinUsed(pin)) {
-            controllers[pin].setServer(null);
-            controllers[pin].setPin(-1);
+        if(pinIsValid(pin) && isPinUsed(pin)) {
+            getController(pin).setServer(null);
+            getController(pin).setPin(-1);
             controllers[pin] = null;
         }
         else
@@ -160,7 +160,7 @@ public class Server implements Runnable {
     }
 
     public Controller getController(int pin) {
-        if(isPinUsed(pin))
+        if(pinIsValid(pin) && isPinUsed(pin))
             return controllers[pin];
         else {
             print("Error : No controller connected on pin "+pin+".");
@@ -173,7 +173,11 @@ public class Server implements Runnable {
     }
 
     public boolean isPinUsed(int pin) {
-        return controllers[pin] != null;
+        return pinIsValid(pin) && controllers[pin] != null;
+    }
+
+    public boolean pinIsValid(int pin) {
+        return (pin >= 0 && pin < controllers.length);
     }
 
     /**
@@ -181,10 +185,7 @@ public class Server implements Runnable {
      * @param pin The pin the controller is connected to.
      */
     public void startController(int pin) {
-        if(isPinUsed(pin))
-            controllers[pin].startController();
-        else
-            print("Error : No controller connected on pin "+pin+".");
+        getController(pin).startController();
     }
 
     /**
@@ -192,10 +193,7 @@ public class Server implements Runnable {
      * @param pin The pin the controller is connected to.
      */
     public void stopController(int pin) {
-        if(isPinUsed(pin))
-            controllers[pin].stopController();
-        else
-            print("Error : No controller connected on pin "+pin+".");
+        getController(pin).stopController();
     }
 
     /**
@@ -203,8 +201,8 @@ public class Server implements Runnable {
      */
     public void startAllControllers() {
         for (int i = 0 ; i < controllers.length ; i++) {
-            if (controllers[i] != null)
-                controllers[i].startController();
+            if (getController(i) != null)
+                getController(i).startController();
         }
     }
 
@@ -213,72 +211,70 @@ public class Server implements Runnable {
      */
     public void stopAllControllers() {
         for (int i = 0 ; i < controllers.length ; i++) {
-            if (controllers[i] != null)
-                controllers[i].stopController();
+            if (getController(i) != null)
+                getController(i).stopController();
         }
 
     }
 
     public EnvironmentSimulation getControllerEnvironment(int pin) {
-        if(isPinUsed(pin))
-            return controllers[pin].getEnvironment();
-        else {
-            print("Error : No controller connected on pin "+pin+".");
+        if(getController(pin) != null)
+            return getController(pin).getEnvironment();
+        else
             return null;
-        }
     }
 
     public void setControllerEnvironment(int pin, EnvironmentSimulation environment) {
         if(isPinUsed(pin))
-            controllers[pin].setEnvironment(environment);
+            getController(pin).setEnvironment(environment);
         else
             print("Error : No controller connected on pin "+pin+".");
     }
 
     public void startControllerEnvironment(int pin) {
         if(isPinUsed(pin))
-            controllers[pin].startEnvironmentSimulation();
+            getController(pin).startEnvironmentSimulation();
         else
             print("Error : No controller connected on pin "+pin+".");
     }
     public void startControllerEnvironment(int pin, long cycleTime) {
         if(isPinUsed(pin))
-            controllers[pin].startEnvironmentSimulation(cycleTime);
+            getController(pin).startEnvironmentSimulation(cycleTime);
         else
             print("Error : No controller connected on pin "+pin+".");
     }
 
     public void startAllEnvironments() {
         for (int i = 0 ; i < controllers.length ; i++) {
-            if (controllers[i] != null)
-                controllers[i].startEnvironmentSimulation();
+            if (getController(i) != null)
+                getController(i).startEnvironmentSimulation();
         }
     }
 
     public void stopAllEnvironments() {
         for (int i = 0 ; i < controllers.length ; i++) {
-            if (controllers[i] != null)
-                controllers[i].stopEnvironmentSimulation();
+            if (getController(i) != null)
+                getController(i).stopEnvironmentSimulation();
         }
     }
 
     public void stopControllerEnvironment(int pin) {
         if(isPinUsed(pin))
-            controllers[pin].stopEnvironmentSimulation();
+            getController(pin).stopEnvironmentSimulation();
         else
             print("Error : No controller connected on pin "+pin+".");
     }
 
     public void setControllerEnvironmentState(int pin, int state) {
         if(isPinUsed(pin))
-            controllers[pin].setEnvironmentState(state);
+            getController(pin).setEnvironmentState(state);
         else
             print("Error : No controller connected on pin "+pin+".");
     }
 
     public void setControllerState(int pin, int state) {
         if(isPinUsed(pin))
-            controllers[pin].changeState(state);
+            getController(pin).changeState(state);
         else
             print("Error : No controller connected on pin "+pin+".");
     }
@@ -301,7 +297,7 @@ public class Server implements Runnable {
 
     public boolean isControllerInState(int pin, int state) {
         if(isPinUsed(pin))
-            return controllers[pin].updateIsState(state);
+            return getController(pin).updateIsState(state);
         else {
             print("Error : No controller connected on pin "+pin+".");
             return false;
@@ -309,9 +305,15 @@ public class Server implements Runnable {
     }
 
     public void checkRules() {
-        for (Rule rule : rules) {
-            if (rule.evaluateExpression(this))
-                rule.executeConsequence(this);
+        for (int i = 0; i < rules.size() ; i++) {
+            try {
+                if (rules.get(i).evaluateExpression(this))
+                    rules.get(i).executeConsequence(this);
+            } catch (ParseException e) {
+                print("Svr : caught parse exception : "+ e +" in rule "+i+". Removing rule.");
+                rules.remove(i);
+            }
+
         }
     }
 

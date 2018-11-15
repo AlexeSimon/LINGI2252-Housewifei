@@ -1,5 +1,7 @@
 package housewifei;
 
+import java.text.ParseException;
+
 public class Rule {
 
     private String expression;
@@ -27,7 +29,7 @@ public class Rule {
         this.consequence = consequence;
     }
 
-    public boolean evaluateExpression(Server server) {
+    public boolean evaluateExpression(Server server) throws ParseException {
 
         HousewifeiBooleanExpressionEvaluator evaluator = new HousewifeiBooleanExpressionEvaluator(server, expression);
         return evaluator.parse();

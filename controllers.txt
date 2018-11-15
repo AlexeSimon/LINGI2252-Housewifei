@@ -1,4 +1,7 @@
-InfraredCamera
+# You can add comments using #
+# Empty lines are ignored
+
+InfraredCamera # Example comment ; This camera checks for human presence
 LightSensor
 RadioReceiver
 ControlledLight

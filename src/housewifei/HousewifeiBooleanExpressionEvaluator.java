@@ -2,6 +2,8 @@ package housewifei;
 
 import util.BooleanExpressionEvaluator;
 
+import java.text.ParseException;
+
 public class HousewifeiBooleanExpressionEvaluator extends BooleanExpressionEvaluator {
 
     Server server;
@@ -12,18 +14,15 @@ public class HousewifeiBooleanExpressionEvaluator extends BooleanExpressionEvalu
     }
 
     @Override
-    public boolean parseNumber(int startPos) {
-        int tempPin;
-        int tempState;
-        int delta;
+    public boolean parseNumber(int startPos) throws ParseException {
+        HousewifeiParser parser = new HousewifeiParser();
         while (ch >= '0' && ch <= '9')
             nextChar();
-        tempPin = Integer.parseInt(expression.substring(startPos, this.pos));
         if(!eat('_'))
-            throw new RuntimeException("Unexpected : " + (char) ch);
-        delta = this.pos;
-        while (ch >= '0' && ch <= '9') nextChar();
-        tempState = Integer.parseInt(expression.substring(delta, this.pos));
-        return server.isControllerInState(tempPin, tempState);
+            handleError();
+        while (ch >= '0' && ch <= '9')
+            nextChar();
+        int[] ans = parser.parseControllerState(expression.substring(startPos, this.pos));
+        return server.isControllerInState(ans[0], ans[1]);
     }
 }
