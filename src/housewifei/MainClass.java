@@ -1,4 +1,7 @@
 package housewifei;
+import util.CommandInterpreter;
+import util.PrintMediator;
+
 import java.util.concurrent.TimeUnit;
 
 
@@ -7,10 +10,16 @@ public class MainClass {
     public static void main(String[] args) {
 
         Server myServer = new Server("controllers.txt", "rules.txt");
+        CommandInterpreter ci = new CommandInterpreter(myServer);
 
-        myServer.startAllControllers();
-        myServer.startServer();
+        ci.startConsole();
 
+
+//        myServer.startAllControllers();
+//        myServer.startServer();
+
+
+/*
         myServer.getControllerEnvironment(0).setName("HumanPresence");
         myServer.startControllerEnvironment(0,2);
         myServer.getControllerEnvironment(1).setName("Light");
@@ -32,7 +41,7 @@ public class MainClass {
         myServer.stopAllControllers();
         myServer.stopAllEnvironments();
         myServer.stopServer();
-
+        */
     }
 
 }

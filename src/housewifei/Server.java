@@ -1,7 +1,6 @@
 package housewifei;
 
-import util.CompanyFileReader;
-import util.CompanyFileReaderBuilder;
+import util.*;
 
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -12,7 +11,7 @@ import java.util.ArrayList;
  * Controls the house automation. Needs to be connected to {@link Controller}s, and listens to a {@link ServerNotifier}.
  * @author Alexe Simon and Mawait Maxime
  */
-public class Server implements Runnable {
+public class Server implements Runnable, TalkativeObject {
 
     /** Controllers connected to this server. */
     private Controller[] controllers;
@@ -28,6 +27,10 @@ public class Server implements Runnable {
 
     /* To hold self thread. */
     private Thread thread;
+
+    private PrintMediator pm = PrintMediator.getInstance();
+
+    private String name = "SVR";
 
     /* Set to to true to silence server's prints */
     private boolean silent = false;
@@ -73,7 +76,7 @@ public class Server implements Runnable {
                 count++;
             }
         } catch (Exception e) {
-            print("Error while reading file "+config_file_controllers+". "+e+".");
+            pm.showMessage(this,"Error while reading file "+config_file_controllers+" ("+e+").", PrintPriority.ERROR);
             System.exit(1);
         }
 
@@ -100,7 +103,7 @@ public class Server implements Runnable {
                 }
 
         } catch (Exception e) {
-            print("Error while reading file "+config_file_rules+". "+e+".");
+            pm.showMessage(this,"Error while reading file "+config_file_rules+" ("+e+").", PrintPriority.ERROR);
             System.exit(1);
         }
 
@@ -128,9 +131,12 @@ public class Server implements Runnable {
         silent = value;
     }
 
-    public void print(String message) {
-        if(!silent)
-            System.out.println(message);
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getName() {
+        return name;
     }
 
     /**
@@ -145,7 +151,7 @@ public class Server implements Runnable {
             controller.setPin(pin);
         }
         else
-            print("Error : "+pin+" already in use.");
+            pm.showMessage(this,pin+" already in use.", PrintPriority.ERROR);
 
     }
 
@@ -156,14 +162,14 @@ public class Server implements Runnable {
             controllers[pin] = null;
         }
         else
-            print("Error : No controller connected on pin "+pin+".");
+            pm.showMessage(this,"no controller connected on pin "+pin+".", PrintPriority.ERROR);
     }
 
     public Controller getController(int pin) {
         if(pinIsValid(pin) && isPinUsed(pin))
             return controllers[pin];
         else {
-            print("Error : No controller connected on pin "+pin+".");
+            pm.showMessage(this,"no controller connected on pin "+pin+".", PrintPriority.ERROR);
             return null;
         }
     }
@@ -228,20 +234,20 @@ public class Server implements Runnable {
         if(isPinUsed(pin))
             getController(pin).setEnvironment(environment);
         else
-            print("Error : No controller connected on pin "+pin+".");
+            pm.showMessage(this,"no controller connected on pin "+pin+".", PrintPriority.ERROR);
     }
 
     public void startControllerEnvironment(int pin) {
         if(isPinUsed(pin))
             getController(pin).startEnvironmentSimulation();
         else
-            print("Error : No controller connected on pin "+pin+".");
+            pm.showMessage(this,"no controller connected on pin "+pin+".", PrintPriority.ERROR);
     }
-    public void startControllerEnvironment(int pin, long cycleTime) {
+    public void startControllerEnvironment(int pin, int cycleTime) {
         if(isPinUsed(pin))
-            getController(pin).startEnvironmentSimulation(cycleTime);
+            getController(pin).startEnvironmentSimulation((long) cycleTime);
         else
-            print("Error : No controller connected on pin "+pin+".");
+            pm.showMessage(this,"no controller connected on pin "+pin+".", PrintPriority.ERROR);
     }
 
     public void startAllEnvironments() {
@@ -262,21 +268,21 @@ public class Server implements Runnable {
         if(isPinUsed(pin))
             getController(pin).stopEnvironmentSimulation();
         else
-            print("Error : No controller connected on pin "+pin+".");
+            pm.showMessage(this,"no controller connected on pin "+pin+".", PrintPriority.ERROR);
     }
 
     public void setControllerEnvironmentState(int pin, int state) {
         if(isPinUsed(pin))
             getController(pin).setEnvironmentState(state);
         else
-            print("Error : No controller connected on pin "+pin+".");
+            pm.showMessage(this,"no controller connected on pin "+pin+".", PrintPriority.ERROR);
     }
 
     public void setControllerState(int pin, int state) {
         if(isPinUsed(pin))
             getController(pin).changeState(state);
         else
-            print("Error : No controller connected on pin "+pin+".");
+            pm.showMessage(this,"no controller connected on pin "+pin+".", PrintPriority.ERROR);
     }
 
     /**
@@ -299,22 +305,29 @@ public class Server implements Runnable {
         if(isPinUsed(pin))
             return getController(pin).updateIsState(state);
         else {
-            print("Error : No controller connected on pin "+pin+".");
+            pm.showMessage(this,"no controller connected on pin "+pin+".", PrintPriority.ERROR);
             return false;
         }
     }
 
     public void checkRules() {
+        boolean didJob = false;
         for (int i = 0; i < rules.size() ; i++) {
             try {
-                if (rules.get(i).evaluateExpression(this))
+                if (rules.get(i).evaluateExpression(this)) {
+                    didJob = true;
+                    pm.showMessage(this,"Activating rule "+ i +": "+rules.get(i)+".", PrintPriority.DEBUG);
                     rules.get(i).executeConsequence(this);
+                }
+
             } catch (ParseException e) {
-                print("Svr : caught parse exception : "+ e +" in rule "+i+". Removing rule.");
+                pm.showMessage(this, "caught parse exception : "+ e +" in rule "+i+". Removing rule.", PrintPriority.ERROR);
                 rules.remove(i);
             }
 
         }
+        if(!didJob)
+            pm.showMessage(this,"No change needed.", PrintPriority.DEBUG);
     }
 
 
@@ -341,20 +354,19 @@ public class Server implements Runnable {
      * Generic thread function for a server.
      */
     public void run() {
-        print("Svr : Server started.\n");
+        pm.showMessage(this, "Server started.", PrintPriority.INFO);
         while(running) {
             synchronized (eventListener) {
                 try {
                     eventListener.wait();
-                    print("Svr : Server awakened by notification.\n");
                     checkRules();
 
                 } catch (InterruptedException e) {
-                    print("Svr : Server interrupted.\n");
+
                 }
             }
         }
-        print("Svr : Server stopped.\n");
+        pm.showMessage(this, "Server stopped.", PrintPriority.INFO);
     }
 
 }

@@ -41,7 +41,6 @@ public class Rule {
         String[] parts = consequence.split("&");
         for (String part : parts) {
             int[] job = parser.parseControllerState(part);
-            server.print("Svr : setting "+server.getController(job[0]).getDescription()+" to state " +job[1]+".");
             server.setControllerState(job[0], job[1]);
         }
     }
