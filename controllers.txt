@@ -8,3 +8,4 @@ ControlledLight
 TemperatureSensor
 ControlledHeater # Example comment
 ControlledLight
+ControlledTv

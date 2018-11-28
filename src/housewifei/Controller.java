@@ -1,5 +1,8 @@
 package housewifei;
 
+import util.PrintMediator;
+import util.TalkativeObject;
+
 import java.util.Arrays;
 import java.util.List;
 
@@ -11,7 +14,7 @@ import java.util.List;
  * @author Alexe Simon and Mawait Maxime
  */
 
-public class Controller implements Runnable  {
+public class Controller implements Runnable, TalkativeObject {
     /** Internally saved state of the controller ; depends on each controller. */
     private int state;
 
@@ -26,6 +29,8 @@ public class Controller implements Runnable  {
 
     /** Simulation of the real state of the environment ; depends on each controller ; only for the pure software prototype version. */
     private EnvironmentSimulation environment;
+
+    private PrintMediator pm = PrintMediator.getInstance();
 
     /** String description of the controller. */
     private String description = "This controller has no description.";
@@ -90,6 +95,10 @@ public class Controller implements Runnable  {
      */
     public void setPin(int pin) {
         this.pin = pin;
+    }
+
+    public String getName() {
+        return "Con|"+pin;
     }
 
     /**

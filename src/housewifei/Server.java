@@ -77,7 +77,7 @@ public class Server implements Runnable, TalkativeObject {
             }
         } catch (Exception e) {
             pm.showMessage(this,"Error while reading file "+config_file_controllers+" ("+e+").", PrintPriority.ERROR);
-            System.exit(1);
+
         }
 
         /* PART 2 : Parsing of second config file on rules consisting of conditions and events */
@@ -279,8 +279,10 @@ public class Server implements Runnable, TalkativeObject {
     }
 
     public void setControllerState(int pin, int state) {
-        if(isPinUsed(pin))
-            getController(pin).changeState(state);
+        if(isPinUsed(pin)) {
+            if (getController(pin).changeState(state))
+                checkRules();
+        }
         else
             pm.showMessage(this,"no controller connected on pin "+pin+".", PrintPriority.ERROR);
     }
@@ -350,11 +352,40 @@ public class Server implements Runnable, TalkativeObject {
         thread.interrupt();
     }
 
+    public void printControllersStatus() {
+        String out = "\n";
+        for(Controller controller : controllers) {
+            out += controller.getClass().getSimpleName() + " on pin " + controller.getPin() + " = "+controller.getState()+"\n";
+        }
+        pm.showMessage(this, out, PrintPriority.INFO);
+    }
+
+    public void printRules() {
+        String out = "\n";
+        for(Rule rule : rules) {
+            out += rule.toString() + "\n";
+        }
+        pm.showMessage(this, out, PrintPriority.INFO);
+    }
+
+    public void deleteRule(int num) {
+       rules.remove(num);
+    }
+
+    public Rule getRule(int num) {
+        return rules.get(num);
+    }
+
+    public void addRule(String rule) {
+        rules.add(new Rule(rule));
+    }
+
     /**
      * Generic thread function for a server.
      */
     public void run() {
         pm.showMessage(this, "Server started.", PrintPriority.INFO);
+        checkRules();
         while(running) {
             synchronized (eventListener) {
                 try {

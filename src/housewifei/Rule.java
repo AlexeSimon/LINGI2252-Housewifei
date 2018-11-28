@@ -8,6 +8,12 @@ public class Rule {
     private String consequence;
 
 
+    public Rule(String all) {
+        String[] split = all.split("@");
+        this.expression = split[0];
+        this.consequence = split[1];
+    }
+
     public Rule(String expression, String consequence) {
         this.expression = expression;
         this.consequence = consequence;
@@ -43,6 +49,10 @@ public class Rule {
             int[] job = parser.parseControllerState(part);
             server.setControllerState(job[0], job[1]);
         }
+    }
+
+    public String toString() {
+        return expression + " -> " + consequence;
     }
 
 }
