@@ -1,11 +1,11 @@
 # You can add comments using #
 # Empty lines are ignored
 
-InfraredCamera # Will be automatically connected on pin 0
+4, 5
+InfraredCamera (1,4) # Will be automatically connected on pin 0
 LightSensor # Will be automatically connected on pin 1
 RadioReceiver # ...
 ControlledLight
 TemperatureSensor
 ControlledHeater # Example comment
 ControlledLight
-ControlledTv

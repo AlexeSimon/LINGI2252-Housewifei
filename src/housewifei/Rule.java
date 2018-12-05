@@ -9,7 +9,7 @@ public class Rule {
 
 
     public Rule(String all) {
-        String[] split = all.split("@");
+        String[] split = all.split("->");
         this.expression = split[0];
         this.consequence = split[1];
     }
@@ -52,7 +52,7 @@ public class Rule {
     }
 
     public String toString() {
-        return expression + " -> " + consequence;
+        return expression.replaceAll("\\|", " | ").replaceAll("&", " & ") + " -> " + consequence.replaceAll("\\|", " | ").replaceAll("&", " & ");
     }
 
 }

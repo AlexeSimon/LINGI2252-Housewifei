@@ -24,6 +24,14 @@ public class CommandInterpreter implements TalkativeObject {
     }
 
     public boolean interpret(String string) {
+        if(string.equals("exit")) {
+            running = false;
+            return true;
+        }
+        else if (string.equals("help")) {
+            // TODO: 05/12/2018
+            return true;
+        }
         return false;
     }
 
@@ -77,10 +85,7 @@ public class CommandInterpreter implements TalkativeObject {
         pm.showMessage(this,"Command Interpreter started.", PrintPriority.INFO);
         while (running) {
             tempString = waitForInput();
-            if(tempString.equals("exit"))
-                running = false;
-            else if (running)
-                reflectionInterpret(tempString);
+            reflectionInterpret(tempString);
         }
         pm.showMessage(this,"Command Interpreter stopped.", PrintPriority.INFO);
 

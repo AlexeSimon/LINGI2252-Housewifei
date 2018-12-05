@@ -69,6 +69,8 @@ public class Server implements Runnable, TalkativeObject {
             int count = 0;
 
             while ((line = raf.smartReadLine()) != null) {
+                //TODO use builder for controller
+                //TODO replace unknown controller with the basic Controller class instead of throwing an exception (must be done using a try catch
                 Controller newController = (Controller) Class.forName("housewifei."+line).getConstructor().newInstance();
                 newController.setDescription(line+" on pin "+count);
                 newController.setEnvironment(new EnvironmentSimulation());
@@ -95,12 +97,9 @@ public class Server implements Runnable, TalkativeObject {
 
             String line;
 
-            while ((line = raf.smartReadLine()) != null) {
-                    String[] parts = line.split("@");
-                    if (parts.length != 2)
-                        throw new RuntimeException("Syntax error not using @ correctly.");
-                    rules.add(new Rule(parts[0], parts[1]));
-                }
+            while ((line = raf.smartReadLine()) != null)
+                    rules.add(new Rule(line));
+
 
         } catch (Exception e) {
             pm.showMessage(this,"Error while reading file "+config_file_rules+" ("+e+").", PrintPriority.ERROR);
